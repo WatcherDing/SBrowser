@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -19,6 +20,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Scroller;
@@ -63,15 +65,43 @@ public class X5WebView extends WebView {
 		/**
 		 * 防止加载网页时调起系统浏览器
 		 */
+		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
 			view.loadUrl(url);
 			return true;
 		}
 
+		@Override
 		public void onReceivedHttpAuthRequest(WebView webview,
-				com.tencent.smtt.export.external.interfaces.HttpAuthHandler httpAuthHandlerhost, String host,
-				String realm) {
+											  com.tencent.smtt.export.external.interfaces.HttpAuthHandler httpAuthHandlerhost, String host,
+											  String realm) {
+
 			boolean flag = httpAuthHandlerhost.useHttpAuthUsernamePassword();
+		}
+
+		@Override
+		public void onPageStarted(WebView webView, String s, Bitmap bitmap) {
+			super.onPageStarted(webView, s, bitmap);
+		}
+
+		@Override
+		public WebResourceResponse shouldInterceptRequest(WebView webView, String s) {
+			return super.shouldInterceptRequest(webView, s);
+		}
+
+		@Override
+		public void onPageFinished(WebView view, String url) {
+			// 在结束加载网页时会回调
+
+			/*// 获取页面内容
+			view.loadUrl("javascript:window.java_obj.showSource("
+					+ "document.getElementsByTagName('html')[0].innerHTML);");
+
+			// 获取解析<meta name="share-description" content="获取到的值">
+			view.loadUrl("javascript:window.java_obj.showDescription("
+					+ "document.querySelector('meta[name=\"share-description\"]').getAttribute('content')"
+					+ ");");*/
+			super.onPageFinished(view, url);
 		}
 	};
 	private WebChromeClient chromeClient = new WebChromeClient() {
@@ -144,7 +174,7 @@ public class X5WebView extends WebView {
 		public boolean onCreateWindow(WebView arg0, boolean arg1, boolean arg2, Message msg) {
 			// TODO Auto-generated method stub
 			if (X5WebView.isSmallWebViewDisplayed == true) {
-
+				Log.e("xxx","-----------------------------------");
 				WebView.WebViewTransport webViewTransport = (WebView.WebViewTransport) msg.obj;
 				WebView webView = new WebView(X5WebView.this.getContext()) {
 
@@ -158,10 +188,17 @@ public class X5WebView extends WebView {
 				};
 				webView.setWebViewClient(new WebViewClient() {
 					public boolean shouldOverrideUrlLoading(WebView arg0, String arg1) {
+						Log.e("xxx",arg1);
 						arg0.loadUrl(arg1);
 						return true;
 					};
 				});
+				//////////dyw
+//				webView.setWebViewClient(new WebViewClient() {
+//
+//
+//				});
+
 				FrameLayout.LayoutParams lp = new LayoutParams(400, 600);
 				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
 				X5WebView.this.addView(webView, lp);
@@ -222,6 +259,7 @@ public class X5WebView extends WebView {
 	public X5WebView(Context arg0, AttributeSet arg1) {
 		super(arg0, arg1);
 		this.setWebViewClientExtension(new X5WebViewEventHandler(this));// 配置X5webview的事件处理
+		Log.e("xxx","-----------------------------x------");
 		this.setWebViewClient(client);
 		//this.setWebChromeClient(chromeClient);
 		//WebStorage webStorage = WebStorage.getInstance();
@@ -235,7 +273,8 @@ public class X5WebView extends WebView {
 		});
 	}
 
-	private void initWebViewSettings() {
+	@SuppressLint("SetJavaScriptEnabled")
+    private void initWebViewSettings() {
 		WebSettings webSetting = this.getSettings();
 		webSetting.setJavaScriptEnabled(true);
 		webSetting.setJavaScriptCanOpenWindowsAutomatically(true);
@@ -256,8 +295,17 @@ public class X5WebView extends WebView {
 		//webSetting.setRenderPriority(WebSettings.RenderPriority.HIGH);
 		webSetting.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
+        //webSetting.setJavaScriptEnabled(true);
+        //webSetting.setj
 		// this.getSettingsExtension().setPageCacheCapacity(IX5WebSettings.DEFAULT_CACHE_CAPACITY);//extension
 		// settings 的设计
+		//=========================
+		//dyw 修改
+		//webSetting.set
+		Log.i("xxxxxx",webSetting.getUserAgentString());
+		//webSetting.setUserAgent("Mozilla/5.0 (Linux; ios 7.1.2; Redmi 5A Build/N2G47H; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/64.0.3282.137 Mobile Safari/537.36");
+		//webSetting.setUserAgent();
+		//Log.i("xxxxxx",webSetting.getUserAgentString());
 	}
 
 	@Override
@@ -405,4 +453,5 @@ public class X5WebView extends WebView {
 //		}
 		return super_onTouchEvent(event);
 	}
+
 }

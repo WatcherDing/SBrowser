@@ -1,7 +1,14 @@
 package com.nicksong.s.browser.activity;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.util.Map;
 
 //import com.example.dyw.s_browser.R;
 import com.example.dyw.s_browser.R;
@@ -10,9 +17,13 @@ import com.nicksong.s.browser.util.Constant;
 import com.nicksong.s.browser.util.DownloadUtil;
 import com.nicksong.s.browser.view.MoreMenuPopWindow;
 import com.nicksong.s.browser.view.X5WebView;
+import com.tencent.smtt.export.external.extension.interfaces.IX5WebViewClientExtension;
+import com.tencent.smtt.export.external.interfaces.ClientCertRequest;
+import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
 import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
 import com.tencent.smtt.sdk.CookieSyncManager;
 import com.tencent.smtt.sdk.DownloadListener;
+import com.tencent.smtt.sdk.ValueCallback;
 import com.tencent.smtt.sdk.WebChromeClient;
 import com.tencent.smtt.sdk.WebSettings;
 import com.tencent.smtt.sdk.WebView;
@@ -27,13 +38,16 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.webkit.JavascriptInterface;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -166,8 +180,12 @@ public class BrowserActivity extends Activity implements OnClickListener{
 		mWebViewClient = new MyWebViewClient();
 		mWebChromeClient = new MyWebChromeClient();
 		mDownloadListener = new MyWebDownloadListener();
+
+		//dyw   getWebViewClientExtension
 	}
-	
+	private void sethtml(WebView webView){
+
+	}
 	private void initData() {
 		initWebView();
 		mWebView.setWebViewClient(mWebViewClient);
@@ -317,36 +335,177 @@ public class BrowserActivity extends Activity implements OnClickListener{
 	private class MyWebViewClient extends WebViewClient {
 		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
+			Log.e("xxxxx",url);
 			// TODO Auto-generated method stub
+			/*URL urls;
+			URLConnection conexion;
+			try {
+				urls = new URL(url);
+				conexion = urls.openConnection();
+				conexion.setConnectTimeout(3000);
+				conexion.connect();
+				// get the size of the file which is in the header of the request
+				int size = conexion.getContentLength();
+				conexion.getContent().toString();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+*/
+
+			//view.loadData(htmlContent, "text/html", "utf-8");
 			return false;
 		}
 		
-		@Override
-		public WebResourceResponse shouldInterceptRequest(WebView arg0,
-				String arg1) {
-			// TODO Auto-generated method stub
-			return super.shouldInterceptRequest(arg0, arg1);
-		}
-		
+
 		@Override
 		public void onPageStarted(WebView view, String url, Bitmap arg2) {
 			// TODO Auto-generated method stub
 			super.onPageStarted(view, url, arg2);
 			webUrl = url;
+			//dyw
+			Log.e("请求链接开始",url);
 			loadDone = false;
 			ivRefresh.setBackgroundResource(R.mipmap.ic_stop);
+			addJavascript(view);
 		}
-		
+
+		@Override
+		public void onLoadResource(WebView webView, String s) {
+			super.onLoadResource(webView, s);
+		}
+
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			// TODO Auto-generated method stub
 			super.onPageFinished(view, url);
 			webUrl = url;
+			//dyw
+			Log.e("请求链接结束",url);
 			loadDone = true;
 			ivRefresh.setBackgroundResource(R.mipmap.ic_refersh);
 			changeBackForwardButton(view);
+			//这里可以写到一个方法中
+			addJavascript(view);
 		}
-	}
+		@Override
+		public WebResourceResponse shouldInterceptRequest(WebView arg0,
+														  String arg1) {
+			Log.e("xxxxx",arg1);
+			// TODO Auto-generated method stub
+			WebResourceResponse response=  super.shouldInterceptRequest(arg0, arg1);
+			Log.e("xxxxx",(response==null)+"");
+			if(response!=null){
+				Log.e("1",""+response.getStatusCode());
+				Log.e("1",response.getEncoding());
+				Log.e("1",response.getMimeType());
+				Log.e("1",response.getReasonPhrase());
+				InputStream inputStream = response.getData();
+				String htmlContent = "";
+
+				htmlContent = convertToString(inputStream);
+				Log.e("1",htmlContent);
+				InputStream is = new ByteArrayInputStream(htmlContent.getBytes());
+				response.setData(is);
+			}
+			return response;
+		}
+		private  void addJavascript(WebView view){
+			String  js = "";
+			js+="function callJS(){";
+			js+="	document.getElementById(\"index-bn\").innerHTML=(\"百度二下\");";
+			js+="   }";
+			js+="callJS();";
+			//获取编译版本
+			final int version = Build.VERSION.SDK_INT;
+			//低于4.4版本方法
+			if (version < 18) {
+				view.loadUrl("javascript:" + js);
+			} else {
+				//高版本方法
+				view.evaluateJavascript("javascript:"+js, new ValueCallback<String>() {
+					@Override
+					public void onReceiveValue(String s) {
+
+					}
+				});
+			}
+		}
+		@Override
+		public WebResourceResponse shouldInterceptRequest(WebView webView, WebResourceRequest webResourceRequest, Bundle bundle) {
+
+            Log.e("1",webResourceRequest.getMethod() );
+			Map<String,String> map=webResourceRequest.getRequestHeaders();
+			for (String key : map.keySet()) {
+				Log.e("Key = " + key,"Key = " + map.get(key));
+			}
+			WebResourceResponse response=  super.shouldInterceptRequest(webView, webResourceRequest, bundle);
+
+			if(response!=null){
+				Log.e("1",""+response.getStatusCode());
+				Log.e("1",response.getEncoding());
+				Log.e("1",response.getMimeType());
+				Log.e("1",response.getReasonPhrase());
+				InputStream inputStream = response.getData();
+				String htmlContent = "";
+
+				htmlContent = convertToString(inputStream);
+				Log.e("1",htmlContent);
+				InputStream is = new ByteArrayInputStream(htmlContent.getBytes());
+				response.setData(is);
+			}
+			return response;
+		}
+
+		public String convertToString(InputStream inputStream){
+			StringBuffer string = new StringBuffer();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+			String line;
+			try {
+				while ((line = reader.readLine()) != null) {
+					string.append(line + "\n");
+				}
+			} catch (IOException e) {}
+			return string.toString();
+		}
+
+		@Override
+		public WebResourceResponse shouldInterceptRequest(WebView webView, WebResourceRequest webResourceRequest) {
+
+			Log.e("1",webResourceRequest.getMethod() );
+			Map<String,String> map=webResourceRequest.getRequestHeaders();
+			for (String key : map.keySet()) {
+				Log.e("Key = " + key,"Key = " + map.get(key));
+			}
+
+			WebResourceResponse response= super.shouldInterceptRequest(webView, webResourceRequest);
+			Log.e("xxxxx",(response==null)+"");
+			if(response!=null){
+				Log.e("1",""+response.getStatusCode());
+				Log.e("1",response.getEncoding());
+				Log.e("1",response.getMimeType());
+				Log.e("1",response.getReasonPhrase());
+				InputStream inputStream = response.getData();
+				String htmlContent = "";
+
+				htmlContent = convertToString(inputStream);
+				Log.e("1",htmlContent);
+				InputStream is = new ByteArrayInputStream(htmlContent.getBytes());
+				response.setData(is);
+			}
+
+				return response;
+		}
+        @Override
+        public void onReceivedClientCertRequest(WebView webView, ClientCertRequest clientCertRequest) {
+
+            super.onReceivedClientCertRequest(webView, clientCertRequest);
+        }
+
+
+
+    }
 	
 	private class MyWebChromeClient extends WebChromeClient {
 		@Override
@@ -386,6 +545,7 @@ public class BrowserActivity extends Activity implements OnClickListener{
 //				}
 //			}
 		}
+
 	}
 	
 	private class MyWebDownloadListener implements DownloadListener {

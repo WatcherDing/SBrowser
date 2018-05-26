@@ -18,6 +18,8 @@ import com.tencent.smtt.export.external.extension.proxy.ProxyWebViewClientExtens
 import com.tencent.smtt.export.external.interfaces.IX5WebViewBase.HitTestResult;
 import com.tencent.smtt.export.external.interfaces.JsResult;
 import com.tencent.smtt.export.external.interfaces.MediaAccessPermissionsCallback;
+import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
+import com.tencent.smtt.export.external.interfaces.WebResourceResponse;
 import com.tencent.smtt.sdk.WebViewCallbackClient;
 
 public class X5WebViewEventHandler extends ProxyWebViewClientExtension implements IX5WebChromeClientExtension{
@@ -36,6 +38,16 @@ public class X5WebViewEventHandler extends ProxyWebViewClientExtension implement
 		this.webView = webView;
 		this.webView.setWebViewCallbackClient(callbackClient);
 		
+	}
+
+	@Override
+	public void onResponseReceived(WebResourceRequest webResourceRequest, WebResourceResponse webResourceResponse, int i) {
+		super.onResponseReceived(webResourceRequest, webResourceResponse, i);
+	}
+
+	@Override
+	public void onUrlChange(String s, String s1) {
+		super.onUrlChange(s, s1);
 	}
 
 	@Override
@@ -211,6 +223,11 @@ public class X5WebViewEventHandler extends ProxyWebViewClientExtension implement
 		@Override
 		public void onScrollChanged(int l, int t, int oldl, int oldt, View view) {
 			webView.tbs_onScrollChanged(l, t, oldl, oldt, view);	
+		}
+
+		@Override
+		public void invalidate() {
+
 		}
 
 		@Override
